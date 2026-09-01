@@ -1,0 +1,592 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Math Quiz</title>
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+  <style>
+    :root {
+      --bg:#071116;
+      --card:#0e2028;
+      --line:#23404a;
+      --text:#eef8f6;
+      --muted:#8da6aa;
+      --aqua:#57f2d2;
+      --red:#ef8d83;
+      --gold:#ffd43b;
+      --disabled:#39474c;
+    }
+
+    * {
+      box-sizing:border-box;
+    }
+
+    body {
+      margin:0;
+      min-height:100vh;
+      display:grid;
+      place-items:center;
+      padding:20px;
+      background:var(--bg);
+      color:var(--text);
+      font-family:Arial,sans-serif;
+    }
+
+    .quiz {
+      width:min(520px,100%);
+      padding:28px 0;
+      background:transparent;
+    }
+
+    /* Top bar */
+    .top {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom:25px;
+    }
+
+    .back {
+      width:45px;
+      height:45px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      text-decoration:none;
+      color:var(--text);
+      font-size:20px;
+      border:1px solid var(--line);
+      background:#0a1820;
+      transition:.2s;
+    }
+
+    .back:hover {
+      color:var(--aqua);
+      border-color:var(--aqua);
+    }
+
+    .coins {
+      display:flex;
+      align-items:center;
+      gap:8px;
+      font-size:18px;
+      font-weight:bold;
+    }
+
+    .coins i {
+      color:var(--gold);
+      font-size:21px;
+      filter:drop-shadow(0 0 5px rgba(255,212,59,.35));
+    }
+
+    #coins {
+      color:var(--gold);
+    }
+
+    h1 {
+      margin:0 0 8px;
+      color:var(--aqua);
+      font-size:28px;
+      text-align:center;
+    }
+
+    .info {
+      display:flex;
+      justify-content:center;
+      border-bottom:1px solid var(--line);
+      padding-bottom:14px;
+    }
+
+    .info span {
+      color:var(--muted);
+      font-size:14px;
+    }
+
+    .info b {
+      color:var(--aqua);
+    }
+
+    #question {
+      margin:34px 0 22px;
+      font-size:32px;
+      text-align:center;
+    }
+
+    #answers {
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+    }
+
+    #answers button {
+      min-height:52px;
+      border:1px solid var(--line);
+      background:#0a1820;
+      color:var(--text);
+      cursor:pointer;
+      font-size:18px;
+      transition:.2s;
+    }
+
+    #answers button:hover:not(:disabled) {
+      border-color:var(--aqua);
+      color:var(--aqua);
+    }
+
+    #answers button:disabled {
+      cursor:default;
+    }
+
+    #next {
+      width:100%;
+      height:52px;
+      margin-top:18px;
+      border:0;
+      background:var(--disabled);
+      color:#89979a;
+      font-weight:bold;
+      font-size:18px;
+      cursor:default;
+      transition:.2s;
+    }
+
+    #next.active {
+      background:var(--aqua);
+      color:#06201d;
+      cursor:pointer;
+    }
+
+    #next.active:hover {
+      background:#8df8df;
+    }
+
+    #message {
+      min-height:25px;
+      margin:18px 0 0;
+      text-align:center;
+      font-size:15px;
+    }
+
+    .error {
+      color:var(--red);
+    }
+
+    .success {
+      color:var(--aqua);
+    }
+
+    @media (max-width:420px) {
+      .quiz {
+        padding:22px 5px;
+      }
+
+      #question {
+        font-size:27px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <main class="quiz">
+
+    <!-- Top -->
+    <div class="top">
+
+      <a href="games.html" class="back" aria-label="Back">
+        <i class="fa-solid fa-arrow-left"></i>
+      </a>
+
+      <div class="coins">
+        <i class="fa-solid fa-coins"></i>
+        <span id="coins">...</span>
+      </div>
+
+    </div>
+
+    <h1>Math Quiz</h1>
+
+    <div class="info">
+      <span>Level: <b id="level">...</b></span>
+    </div>
+
+    <h2 id="question">Loading question...</h2>
+
+    <div id="answers"></div>
+
+    <p id="message"></p>
+
+    <!-- Always visible -->
+    <button id="next" disabled>Next</button>
+
+  </main>
+
+
+  <script type="module">
+
+    import { initializeApp }
+      from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+    import {
+      getDatabase,
+      ref,
+      get,
+      runTransaction
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDv25RohGhKcxDlt1DZaPb7BUg7LpWnJqo",
+      authDomain: "yes-coins-6a2d2.firebaseapp.com",
+      databaseURL: "https://yes-coins-6a2d2-default-rtdb.firebaseio.com",
+      projectId: "yes-coins-6a2d2",
+      storageBucket: "yes-coins-6a2d2.firebasestorage.app",
+      messagingSenderId: "868288595143",
+      appId: "1:868288595143:web:cc8e500e6c3c8cc4ab2ae2",
+      measurementId: "G-9XL5H32P79"
+    };
+
+
+    const username = localStorage.getItem("username");
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const userRef = ref(db, `users/${username}`);
+
+
+    let level = 1;
+    let coins = 0;
+    let answer = 0;
+
+
+    const $ = (id) => document.getElementById(id);
+
+
+    if (!username) {
+
+      $("question").textContent =
+        "Username not found in localStorage";
+
+      $("message").textContent =
+        'Use: localStorage.setItem("username", "Ahmed")';
+
+      $("message").className = "error";
+
+      throw new Error("username is missing from localStorage");
+    }
+
+
+    function random(min, max) {
+      return Math.floor(
+        Math.random() * (max - min + 1)
+      ) + min;
+    }
+
+
+    function createQuestion() {
+
+      const type = random(1, 4);
+
+      let a;
+      let b;
+      let text;
+
+
+      /* Addition */
+      if (type === 1) {
+
+        const max =
+          10 + level * 3;
+
+        a = random(1, max);
+        b = random(1, max);
+
+        answer = a + b;
+
+        text = `${a} + ${b} = ?`;
+      }
+
+
+      /* Subtraction */
+      if (type === 2) {
+
+        const max =
+          15 + level * 3;
+
+        a = random(5, max);
+        b = random(1, a);
+
+        answer = a - b;
+
+        text = `${a} - ${b} = ?`;
+      }
+
+
+      /* Multiplication */
+      if (type === 3) {
+
+        const maxA =
+          Math.min(15, 3 + level);
+
+        const maxB =
+          Math.min(12, 4 + level);
+
+        a = random(2, maxA);
+        b = random(2, maxB);
+
+        answer = a * b;
+
+        text = `${a} × ${b} = ?`;
+      }
+
+
+      /* Division */
+      if (type === 4) {
+
+        b = random(
+          2,
+          Math.min(12, 4 + level)
+        );
+
+        answer = random(
+          2,
+          Math.min(15, 5 + level)
+        );
+
+        a = b * answer;
+
+        text = `${a} ÷ ${b} = ?`;
+      }
+
+
+      $("question").textContent = text;
+
+      $("message").textContent = "";
+      $("message").className = "";
+
+      /* Next is disabled for every new question */
+      $("next").disabled = true;
+      $("next").classList.remove("active");
+
+      $("answers").innerHTML = "";
+
+
+      /* Generate answers */
+
+      const choices = new Set([answer]);
+
+      while (choices.size < 4) {
+
+        const difference = random(-7, 7);
+
+        const wrong =
+          answer + difference;
+
+        if (
+          wrong >= 0 &&
+          wrong !== answer
+        ) {
+          choices.add(wrong);
+        }
+      }
+
+
+      [...choices]
+        .sort(() => Math.random() - 0.5)
+        .forEach((choice) => {
+
+          const button =
+            document.createElement("button");
+
+          button.textContent = choice;
+
+          button.onclick = () =>
+            checkAnswer(choice, button);
+
+          $("answers").appendChild(button);
+        });
+    }
+
+
+    function showData() {
+
+      $("level").textContent = level;
+
+      $("coins").textContent = coins;
+    }
+
+
+    async function checkAnswer(
+      choice,
+      clickedButton
+    ) {
+
+      document
+        .querySelectorAll("#answers button")
+        .forEach(button => {
+          button.disabled = true;
+        });
+
+
+      /* Wrong answer */
+
+      if (choice !== answer) {
+
+        clickedButton.style.borderColor =
+          "var(--red)";
+
+        $("message").textContent =
+          "Wrong answer. Try again.";
+
+        $("message").className =
+          "error";
+
+
+        /* Allow another attempt */
+
+        document
+          .querySelectorAll("#answers button")
+          .forEach(button => {
+            button.disabled = false;
+          });
+
+        return;
+      }
+
+
+      /* Correct answer */
+
+      clickedButton.style.borderColor =
+        "var(--aqua)";
+
+
+      const nextLevel =
+        level + 1;
+
+
+      try {
+
+        const result =
+          await runTransaction(
+            userRef,
+            (data) => {
+
+              data = data || {};
+
+              data.coins =
+                (Number(data.coins) || 0) + 1;
+
+              data.games =
+                data.games || {};
+
+              data.games.math_quiz =
+                data.games.math_quiz || {};
+
+              data.games.math_quiz.level =
+                nextLevel;
+
+              return data;
+            }
+          );
+
+
+        coins =
+          Number(
+            result.snapshot.val().coins
+          ) || coins + 1;
+
+
+        level =
+          nextLevel;
+
+
+        showData();
+
+
+        $("message").textContent =
+          "Correct! You earned 1 coin.";
+
+        $("message").className =
+          "success";
+
+
+        /* Activate Next button */
+
+        $("next").disabled = false;
+
+        $("next").classList.add("active");
+
+
+      } catch (error) {
+
+        console.error(error);
+
+        $("message").textContent =
+          "An error occurred while saving your progress.";
+
+        $("message").className =
+          "error";
+      }
+    }
+
+
+    $("next").onclick = () => {
+
+      if (!$("next").disabled) {
+        createQuestion();
+      }
+    };
+
+
+    /* Load Firebase data */
+
+    try {
+
+      const snapshot =
+        await get(userRef);
+
+      const data =
+        snapshot.val() || {};
+
+
+      level =
+        Number(
+          data.games?.math_quiz?.level
+        ) || 1;
+
+
+      coins =
+        Number(data.coins) || 0;
+
+
+      showData();
+
+      createQuestion();
+
+
+    } catch (error) {
+
+      console.error(error);
+
+      $("question").textContent =
+        "Unable to load player data";
+
+      $("message").textContent =
+        "Check your Firebase connection and database rules.";
+
+      $("message").className =
+        "error";
+    }
+
+  </script>
+
+</body>
+</html>

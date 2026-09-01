@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en" translate="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Spin Wheel</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<style>
+*{box-sizing:border-box}
+body{
+margin:0;
+background:#050505;
+color:#fff;
+font-family:Arial,sans-serif;
+min-height:100vh;
+display:flex;
+flex-direction:column;
+align-items:center;
+overflow:hidden
+}
+.top{
+width:100%;
+height:65px;
+display:flex;
+align-items:center;
+padding:0 18px
+}
+.back{
+border:1px solid #00ffff;
+background:#111;
+color:#00ffff;
+width:44px;
+height:44px;
+border-radius:13px;
+font-size:19px;
+box-shadow:0 0 10px #00ffff55;
+cursor:pointer
+}
+.balances{
+display:flex;
+gap:10px;
+margin-left:auto
+}
+.balance{
+background:#111;
+border:1px solid #00ffff55;
+border-radius:12px;
+padding:8px 12px;
+font-size:14px;
+box-shadow:0 0 10px #00ffff22
+}
+.balance i{color:#00ffff;margin-right:5px}
+.title{
+margin-top:8px;
+font-size:25px;
+font-weight:bold;
+color:#00ffff;
+text-shadow:0 0 12px #00ffff88
+}
+.subtitle{
+margin-top:6px;
+color:#aaa;
+font-size:14px
+}
+.wheel-box{
+position:relative;
+width:min(88vw,380px);
+height:min(88vw,380px);
+margin-top:28px;
+filter:drop-shadow(0 0 15px #00ffff33)
+}
+#wheel{
+width:100%;
+height:100%;
+border-radius:50%;
+transition:transform 5s cubic-bezier(.12,.72,.08,1);
+box-shadow:0 0 0 5px #111,0 0 0 7px #00ffff,0 0 25px #00ffff66;
+background:#111
+}
+.pointer{
+position:absolute;
+top:-13px;
+left:50%;
+transform:translateX(-50%);
+z-index:5;
+width:0;
+height:0;
+border-left:17px solid transparent;
+border-right:17px solid transparent;
+border-top:36px solid #00ffff;
+filter:drop-shadow(0 0 8px #00ffff)
+}
+.center{
+position:absolute;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%);
+width:64px;
+height:64px;
+border-radius:50%;
+background:#080808;
+border:4px solid #00ffff;
+box-shadow:0 0 18px #00ffff;
+z-index:4;
+display:flex;
+align-items:center;
+justify-content:center;
+color:#00ffff;
+font-size:22px
+}
+.spin{
+margin-top:32px;
+width:210px;
+height:55px;
+border:0;
+border-radius:16px;
+background:#00ffff;
+color:#000;
+font-size:18px;
+font-weight:bold;
+cursor:pointer;
+box-shadow:0 0 18px #00ffff88;
+transition:.2s
+}
+.spin:active{transform:scale(.96)}
+.spin:disabled{
+opacity:.45;
+cursor:not-allowed;
+box-shadow:none
+}
+.cost{
+margin-top:10px;
+font-size:13px;
+color:#888
+}
+.cost i{color:#00ffff}
+#message{
+position:fixed;
+left:50%;
+bottom:25px;
+transform:translateX(-50%) translateY(100px);
+background:#111;
+border:1px solid #00ffff;
+color:#fff;
+padding:13px 22px;
+border-radius:14px;
+font-size:14px;
+opacity:0;
+transition:.3s;
+z-index:20;
+white-space:nowrap;
+box-shadow:0 0 15px #00ffff55
+}
+#message.show{
+transform:translateX(-50%) translateY(0);
+opacity:1
+}
+.win{
+position:fixed;
+inset:0;
+background:#000b;
+display:none;
+align-items:center;
+justify-content:center;
+z-index:15
+}
+.win-box{
+width:280px;
+background:#0d0d0d;
+border:1px solid #00ffff;
+border-radius:20px;
+padding:28px;
+text-align:center;
+box-shadow:0 0 30px #00ffff55
+}
+.win-box i{
+font-size:45px;
+color:#00ffff;
+text-shadow:0 0 15px #00ffff
+}
+.win-box h2{
+margin:15px 0 8px;
+color:#00ffff
+}
+.win-box p{
+color:#aaa
+}
+.ok{
+margin-top:12px;
+padding:11px 35px;
+border:0;
+border-radius:12px;
+background:#00ffff;
+font-weight:bold;
+cursor:pointer
+}
+</style>
+</head>
+
+<body>
+
+<div class="top">
+<button class="back" onclick="location.href='home.html'">
+<i class="fa-solid fa-arrow-left"></i>
+</button>
+<div class="balances">
+<div class="balance"><i class="fa-solid fa-coins"></i><span id="coins">0</span></div>
+<div class="balance"><i class="fa-solid fa-gem"></i><span id="gems">0</span></div>
+</div>
+</div>
+
+<div class="title">Spin Wheel</div>
+<div class="subtitle">Try your luck and win coins!</div>
+
+<div class="wheel-box">
+<div class="pointer"></div>
+<canvas id="wheel" width="700" height="700"></canvas>
+<div class="center"><i class="fa-solid fa-star"></i></div>
+</div>
+
+<button class="spin" id="spinBtn" onclick="spin()">
+<i class="fa-solid fa-rotate"></i> SPIN
+</button>
+
+<div class="cost">
+<i class="fa-solid fa-gem"></i> 5 gems per spin
+</div>
+
+<div id="message"></div>
+
+<div class="win" id="win">
+<div class="win-box">
+<i class="fa-solid fa-gift"></i>
+<h2>Congratulations!</h2>
+<p id="winText"></p>
+<button class="ok" onclick="closeWin()">OK</button>
+</div>
+</div>
+
+<script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import{getDatabase,ref,onValue,runTransaction}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const firebaseConfig={
+apiKey:"AIzaSyDv25RohGhKcxDlt5hDZaPb7BUg7LpWnJqo",
+authDomain:"yes-coins-6a2d2.firebaseapp.com",
+databaseURL:"https://yes-coins-6a2d2-default-rtdb.firebaseio.com",
+projectId:"yes-coins-6a2d2",
+storageBucket:"yes-coins-6a2d2.firebasestorage.app",
+messagingSenderId:"868288595143",
+appId:"1:868288595143:web:cc8e500e6c3c8cc4ab2ae2",
+measurementId:"G-9XL5H32P79"
+};
+
+const app=initializeApp(firebaseConfig);
+const db=getDatabase(app);
+
+const username=localStorage.getItem("username");
+
+if(!username)location.href="home.html";
+
+const prizes=[
+{coins:100,prob:25},
+{coins:200,prob:5},
+{coins:50,prob:20},
+{coins:35,prob:15},
+{coins:15,prob:5},
+{coins:300,prob:5},
+{coins:150,prob:10},
+{coins:75,prob:15}
+];
+
+const canvas=document.getElementById("wheel");
+const ctx=canvas.getContext("2d");
+const size=canvas.width;
+const center=size/2;
+const radius=size/2-8;
+const slice=Math.PI*2/prizes.length;
+
+const colors=[
+"#111111","#171717","#101010","#181818",
+"#111111","#171717","#101010","#181818"
+];
+
+function drawWheel(){
+ctx.clearRect(0,0,size,size);
+
+for(let i=0;i<prizes.length;i++){
+const start=i*slice-Math.PI/2;
+const end=start+slice;
+
+ctx.beginPath();
+ctx.moveTo(center,center);
+ctx.arc(center,center,radius,start,end);
+ctx.closePath();
+ctx.fillStyle=colors[i];
+ctx.fill();
+
+ctx.lineWidth=5;
+ctx.strokeStyle="#00ffff";
+ctx.stroke();
+
+const angle=start+slice/2;
+const x=center+Math.cos(angle)*radius*.62;
+const y=center+Math.sin(angle)*radius*.62;
+
+ctx.save();
+ctx.translate(x,y);
+ctx.rotate(angle+Math.PI/2);
+ctx.fillStyle="#fff";
+ctx.font="bold 34px Arial";
+ctx.textAlign="center";
+ctx.textBaseline="middle";
+ctx.fillText(prizes[i].coins,0,0);
+ctx.restore();
+}
+
+ctx.beginPath();
+ctx.arc(center,center,radius,0,Math.PI*2);
+ctx.lineWidth=7;
+ctx.strokeStyle="#00ffff";
+ctx.stroke();
+}
+
+drawWheel();
+
+const userRef=ref(db,"users/"+username);
+
+onValue(userRef,snap=>{
+const data=snap.val();
+if(!data){
+showMessage("User account not found");
+return;
+}
+document.getElementById("coins").textContent=data.coins||0;
+document.getElementById("gems").textContent=data.gems||0;
+});
+
+let spinning=false;
+
+/*
+هذه هي الزاوية الكلية التي وصلت إليها العجلة.
+نحتفظ بها بين جميع اللفات.
+*/
+let currentRotation=0;
+
+function getPrize(){
+const random=Math.random()*100;
+let total=0;
+
+for(let i=0;i<prizes.length;i++){
+total+=prizes[i].prob;
+if(random<total)return i;
+}
+
+return prizes.length-1;
+}
+
+window.spin=async function(){
+
+if(spinning)return;
+
+spinning=true;
+
+const btn=document.getElementById("spinBtn");
+btn.disabled=true;
+
+/*
+نحدد الجائزة أولاً حسب النسب.
+*/
+const prizeIndex=getPrize();
+const prize=prizes[prizeIndex];
+
+let success=false;
+
+try{
+
+const result=await runTransaction(userRef,current=>{
+
+if(current===null)return;
+
+const gems=Number(current.gems)||0;
+
+if(gems<5)return;
+
+current.gems=gems-5;
+current.coins=(Number(current.coins)||0)+prize.coins;
+
+return current;
+});
+
+success=result.committed;
+
+}catch(error){
+
+console.error(error);
+showMessage("Connection error. Try again.");
+spinning=false;
+btn.disabled=false;
+return;
+
+}
+
+if(!success){
+
+showMessage("You need at least 5 gems!");
+spinning=false;
+btn.disabled=false;
+return;
+
+}
+
+/*
+=================================================
+الحساب الصحيح للدوران
+=================================================
+
+مركز كل خانة بالنسبة إلى أعلى العجلة:
+
+الخانة 0 = -90°
+الخانة 1 = -45°
+الخانة 2 = 0°
+...
+
+ولكي يصل مركز الجائزة إلى المؤشر الموجود في الأعلى،
+يجب أن تكون الزاوية النهائية مساوية للزاوية العكسية
+لمركز الخانة.
+
+الأهم هنا أننا لا نحسب من الصفر.
+
+نأخذ currentRotation ونحسب فقط مقدار الدوران
+الإضافي المطلوب من الموضع الحالي.
+*/
+
+const targetAngle=prizeIndex*slice+slice/2;
+
+/*
+الزاوية المطلوبة لكي يصبح مركز الخانة تحت المؤشر.
+*/
+const targetDegrees=
+(360-(targetAngle*180/Math.PI))%360;
+
+/*
+موضع العجلة الحالي داخل دورة واحدة.
+*/
+const currentDegrees=
+((currentRotation%360)+360)%360;
+
+/*
+كم درجة نحتاج من الموضع الحالي للوصول إلى الجائزة؟
+*/
+let delta=
+targetDegrees-currentDegrees;
+
+if(delta<0)delta+=360;
+
+/*
+نضيف 5 إلى 7 دورات كاملة لجعل الدوران ممتعاً.
+الدورات الكاملة لا تغير الخانة النهائية.
+*/
+const extraTurns=5+Math.floor(Math.random()*3);
+
+delta+=extraTurns*360;
+
+/*
+الآن نضيف الدوران إلى الموضع الحالي
+بدلاً من بدء الحساب من الصفر.
+*/
+currentRotation+=delta;
+
+canvas.style.transform=
+`rotate(${currentRotation}deg)`;
+
+/*
+مدة transition = 5 ثواني.
+*/
+setTimeout(()=>{
+
+document.getElementById("winText").innerHTML=
+"You won <strong style='color:#00ffff;font-size:25px'>"+
+prize.coins+
+" Coins</strong>!";
+
+document.getElementById("win").style.display="flex";
+
+spinning=false;
+btn.disabled=false;
+
+},5000);
+
+};
+
+window.closeWin=function(){
+document.getElementById("win").style.display="none";
+};
+
+function showMessage(text){
+const box=document.getElementById("message");
+
+box.textContent=text;
+box.classList.add("show");
+
+setTimeout(()=>{
+box.classList.remove("show");
+},2500);
+}
+</script>
+
+</body>
+</html>

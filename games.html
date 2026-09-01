@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en" translate="no">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Games</title>
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+  <style>
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: #000;
+      color: #fff;
+      font-family: Arial, sans-serif;
+    }
+
+    /* TOP BAR */
+    .top {
+      height: 65px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 15px;
+    }
+
+    /* BACK BUTTON */
+    .back {
+      color: white;
+      text-decoration: none;
+      font-size: 24px;
+    }
+
+    .back:active {
+      transform: scale(0.9);
+    }
+
+    /* BALANCES */
+    .balances {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .balance {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    .coins {
+      color: #ffd700;
+    }
+
+    .gems {
+      color: #00ffff;
+    }
+
+    .balance i {
+      font-size: 18px;
+    }
+
+    /* GAMES */
+    .games {
+      padding: 10px;
+    }
+
+    .game {
+      display: flex;
+      align-items: center;
+
+      width: 100%;
+      max-width: 400px;
+      height: 90px;
+
+      margin: 15px auto;
+
+      padding: 5px;
+
+      background: #151515;
+      border-radius: 15px;
+
+      text-decoration: none;
+      color: white;
+
+      box-shadow: 0 0 10px rgba(0, 255, 255, 0.25);
+
+      transition: 0.2s;
+    }
+
+    .game:active {
+      transform: scale(0.97);
+    }
+
+    /* GAME IMAGE */
+    .game img {
+      width: 80px;
+      height: 80px;
+
+      object-fit: cover;
+
+      border-radius: 12px;
+
+      margin-right: 15px;
+    }
+
+    /* GAME NAME */
+    .game-name {
+      font-size: 19px;
+      font-weight: bold;
+    }
+
+    /* RIGHT ARROW */
+    .arrow {
+      margin-left: auto;
+      margin-right: 15px;
+
+      color: #00ffff;
+
+      font-size: 18px;
+    }
+
+  </style>
+</head>
+
+
+<body>
+
+
+  <!-- TOP BAR -->
+  <div class="top">
+
+    <!-- BACK -->
+    <a href="home.html" class="back">
+      <i class="fa-solid fa-arrow-left"></i>
+    </a>
+
+
+    <!-- COINS + GEMS -->
+    <div class="balances">
+
+      <div class="balance coins">
+        <i class="fa-solid fa-coins"></i>
+        <span id="coins">0</span>
+      </div>
+
+      <div class="balance gems">
+        <i class="fa-solid fa-gem"></i>
+        <span id="gems">0</span>
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- GAMES -->
+  <div class="games">
+
+
+    <!-- APPLE TREE -->
+    <a href="apple_tree.html" class="game">
+
+      <img src="images/apple_tree.jpg" alt="Apple Tree">
+
+      <div class="game-name">
+        Apple Tree
+      </div>
+
+      <div class="arrow">
+        <i class="fa-solid fa-chevron-right"></i>
+      </div>
+
+    </a>
+
+
+    <!-- MATH QUIZ -->
+    <a href="math_quiz.html" class="game">
+
+      <img src="images/math_quiz.jpg" alt="Math Quiz">
+
+      <div class="game-name">
+        Math Quiz
+      </div>
+
+      <div class="arrow">
+        <i class="fa-solid fa-chevron-right"></i>
+      </div>
+
+    </a>
+
+
+  </div>
+
+
+<script>
+
+/* ================================
+   FIREBASE CONFIG
+================================ */
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDv25RohGhKcxDlt1DZaPb7BUg7LpWnJqo",
+  authDomain: "yes-coins-6a2d2.firebaseapp.com",
+  databaseURL: "https://yes-coins-6a2d2-default-rtdb.firebaseio.com",
+  projectId: "yes-coins-6a2d2",
+  storageBucket: "yes-coins-6a2d2.firebasestorage.app",
+  messagingSenderId: "868288595143",
+  appId: "1:868288595143:web:cc8e500e6c3c8cc4ab2ae2",
+  measurementId: "G-9XL5H32P79"
+};
+
+
+/* START FIREBASE */
+firebase.initializeApp(firebaseConfig);
+
+const db = firebase.database();
+
+
+/* ================================
+   GET USERNAME
+================================ */
+
+/*
+   يجب أن يكون اسم المستخدم محفوظاً
+   في localStorage عند تسجيل الدخول.
+
+   مثال:
+   localStorage.setItem("username", username);
+*/
+
+const username = localStorage.getItem("username");
+
+
+/* ================================
+   CHECK LOGIN
+================================ */
+
+if (!username) {
+
+  // إذا لم يكن المستخدم مسجلاً للدخول
+  window.location.href = "login.html";
+
+} else {
+
+  /* ================================
+     READ USER DATA
+  ================================= */
+
+  const userRef = db.ref("users/" + username);
+
+  userRef.on("value", function(snapshot) {
+
+    const user = snapshot.val();
+
+    if (!user) {
+      return;
+    }
+
+
+    /* COINS */
+    if (user.coins !== undefined) {
+      document.getElementById("coins").textContent =
+        Number(user.coins).toLocaleString();
+    }
+
+
+    /* GEMS */
+    if (user.gems !== undefined) {
+      document.getElementById("gems").textContent =
+        Number(user.gems).toLocaleString();
+    }
+
+  });
+
+}
+
+</script>
+
+</body>
+</html>

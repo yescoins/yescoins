@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en" translate="no" dir="ltr">
+<head>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Register</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+body{
+background:#000;
+color:aqua;
+font-family:Arial,sans-serif;
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+padding:0;
+margin:0;
+min-height:100vh
+}
+#logo-img{width:280px}
+input{
+background:#222;
+color:aqua;
+border:0;
+padding:2px 40px 2px 10px;
+margin:10px;
+width:260px;
+height:35px;
+border-radius:12px;
+font-size:18px;
+outline-color:aqua;
+font-weight:bold
+}
+input::placeholder{color:#aaa}
+.password-box,.referral-box{
+position:relative;
+width:320px
+}
+.toggle-eye,.referral-box i{
+position:absolute;
+right:20px;
+top:50%;
+transform:translateY(-50%);
+cursor:pointer;
+color:aqua
+}
+.referral-box input{padding-right:40px}
+button{
+background:#222;
+color:aqua;
+border:none;
+width:200px;
+height:40px;
+margin-top:10px;
+border-radius:20px;
+cursor:pointer;
+font-weight:bold;
+transition:.2s
+}
+button:hover{background:#00cccc}
+button:disabled{
+opacity:.5;
+cursor:not-allowed
+}
+a{
+color:aqua;
+margin-top:5px
+}
+</style>
+<link rel="stylesheet" href="styles/custom_alerts.css">
+</head>
+
+<body>
+
+<img id="logo-img" src="images/logo.png">
+
+<input type="text" id="username" placeholder="Username">
+
+<div class="password-box">
+<input type="password" id="password" placeholder="Password">
+<i class="fa-solid fa-eye toggle-eye" id="togglePassword"></i>
+</div>
+
+<div class="referral-box">
+<input type="text" id="referralCode" placeholder="Invite Code (optional)">
+<i class="fa-solid fa-gift"></i>
+</div>
+
+<button id="register">Register</button>
+
+<a href="index.html">You have an account</a>
+
+<script type="module">
+
+import{database}from"./scripts/config.js";
+
+import{
+ref,
+get,
+set,
+update
+}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+
+/* =========================
+إظهار وإخفاء كلمة المرور
+========================= */
+
+document.getElementById("togglePassword").addEventListener("click",()=>{
+
+const pass=document.getElementById("password");
+const icon=document.getElementById("togglePassword");
+
+if(pass.type==="password"){
+pass.type="text";
+icon.classList.remove("fa-eye");
+icon.classList.add("fa-eye-slash");
+}else{
+pass.type="password";
+icon.classList.remove("fa-eye-slash");
+icon.classList.add("fa-eye");
+}
+
+});
+
+
+const register=document.getElementById("register");
+
+
+/* =========================
+توليد كود عشوائي من 6 أحرف
+========================= */
+
+function generateCode(){
+
+const chars=
+"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+let code="";
+
+for(let i=0;i<6;i++){
+code+=chars[Math.floor(Math.random()*chars.length)];
+}
+
+return code;
+
+}
+
+
+/* =========================
+إنشاء كود فريد
+========================= */
+
+async function createUniqueCode(username){
+
+for(let i=0;i<50;i++){
+
+const code=generateCode();
+
+const codeRef=
+ref(database,"referralCodes/"+code);
+
+const snapshot=
+await get(codeRef);
+
+/*
+الكود غير موجود
+*/
+
+if(!snapshot.exists()){
+
+await set(codeRef,username);
+
+return code;
+
+}
+
+}
+
+/*
+احتمال الوصول هنا صغير جدًا.
+*/
+
+throw new Error("Could not create a unique invite code.");
+
+}
+
+
+/* =========================
+التسجيل
+========================= */
+
+register.addEventListener("click",async()=>{
+
+const username=
+document.getElementById("username").value.trim();
+
+const password=
+document.getElementById("password").value;
+
+const referralCode=
+document.getElementById("referralCode").value.trim();
+
+
+/* التحقق من البيانات */
+
+if(!username||!password){
+
+alert("Please fill in all fields.");
+return;
+
+}
+
+
+/* التحقق من اسم المستخدم */
+
+if(!/^[A-Za-z0-9_]+$/.test(username)){
+
+alert("Username can only contain letters, numbers and _.");
+return;
+
+}
+
+if(username.length<3){
+
+alert("Username must contain at least 3 characters.");
+return;
+
+}
+
+
+register.disabled=true;
+register.textContent="Creating...";
+
+
+try{
+
+
+/* =========================
+التأكد من اسم المستخدم
+========================= */
+
+const userRef=
+ref(database,"users/"+username);
+
+const userSnapshot=
+await get(userRef);
+
+if(userSnapshot.exists()){
+
+alert("Username already taken.");
+
+register.disabled=false;
+register.textContent="Register";
+
+return;
+
+}
+
+
+/* =========================
+التحقق من كود الدعوة
+========================= */
+
+let referrerUsername=null;
+
+if(referralCode){
+
+const referralRef=
+ref(database,"referralCodes/"+referralCode);
+
+const referralSnapshot=
+await get(referralRef);
+
+if(!referralSnapshot.exists()){
+
+alert("Invalid invite code.");
+
+register.disabled=false;
+register.textContent="Register";
+
+return;
+
+}
+
+referrerUsername=
+referralSnapshot.val();
+
+
+/*
+منع استعمال الكود الخاص
+*/
+
+if(referrerUsername===username){
+
+alert("You cannot use your own invite code.");
+
+register.disabled=false;
+register.textContent="Register";
+
+return;
+
+}
+
+}
+
+
+/* =========================
+إنشاء كود المستخدم الجديد
+========================= */
+
+const myCode=
+await createUniqueCode(username);
+
+
+/* =========================
+مكافأة استعمال كود الدعوة
+تُمنح فورًا للمستخدم الجديد فقط.
+مكافأة صاحب الدعوة أصبحت من المتجر
+عند أول عملية شراء يقوم بها المدعو.
+========================= */
+
+const referralSignupBonus=
+referrerUsername?50:0;
+
+
+/* =========================
+إنشاء بيانات المستخدم
+========================= */
+
+const userData={
+password:password,
+coins:100+referralSignupBonus,
+gems:10,
+code:myCode,
+createdAt:Date.now()
+};
+
+
+/*
+إذا استخدم كود صديق،
+نسجل صاحب الدعوة وحالة المكافأة
+(معلّقة إلى حين أول عملية شراء).
+*/
+
+if(referrerUsername){
+
+userData.referredBy=
+referrerUsername;
+
+userData.referralRewardGiven=
+false;
+
+}
+
+
+/* =========================
+إنشاء الحساب
+========================= */
+
+await set(userRef,userData);
+
+
+/* =========================
+تسجيل الإحالة عند صاحب الدعوة
+(بدون إضافة كوينز الآن، الحالة معلّقة
+وستُصرف من المتجر عند أول شراء للمدعو)
+========================= */
+
+if(referrerUsername){
+
+const referrerRef=
+ref(database,"users/"+referrerUsername);
+
+const referrerSnapshot=
+await get(referrerRef);
+
+if(referrerSnapshot.exists()){
+
+const referrerData=
+referrerSnapshot.val();
+
+
+/*
+إنشاء قسم referrals إذا لم يكن موجودًا.
+*/
+
+if(!referrerData.referrals){
+
+referrerData.referrals={};
+
+}
+
+
+/*
+نستخدم اسم المستخدم الجديد كمفتاح.
+إذا كان موجودًا مسبقًا فلا نعيد إنشاءه.
+*/
+
+if(!referrerData.referrals[username]){
+
+referrerData.referrals[username]={
+reward:100,
+code:myCode,
+status:"pending",
+createdAt:Date.now()
+};
+
+await set(referrerRef,referrerData);
+
+}
+
+}
+
+}
+
+
+/* =========================
+حفظ البيانات محليًا
+========================= */
+
+localStorage.setItem(
+"username",
+username
+);
+
+localStorage.setItem(
+"password",
+password
+);
+
+localStorage.setItem(
+"coins",
+userData.coins
+);
+
+localStorage.setItem(
+"gems",
+10
+);
+
+localStorage.setItem(
+"code",
+myCode
+);
+
+
+/* =========================
+نجاح التسجيل
+========================= */
+
+location.href="home.html";
+
+
+}catch(error){
+
+console.error(error);
+
+alert(
+"Error during registration: "+
+error.message
+);
+
+register.disabled=false;
+register.textContent="Register";
+
+}
+
+});
+
+</script>
+
+<script src="scripts/custom_alerts.js"></script>
+
+</body>
+</html>

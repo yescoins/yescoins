@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en" translate="no" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <title>Public Chat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: Arial, sans-serif; background: #0b0f12; color: #00ffff; margin: 0; padding: 0; }
+    #backBtn { display: inline-block; margin: 10px; padding: 8px 15px; background: aqua; color: #111; text-decoration: none; border-radius: 6px; font-weight: bold; }
+    #messages { height: 65vh; overflow-y: auto; padding: 10px; border-bottom: 1px solid aqua; }
+    .msg { padding: 8px; margin: 6px 0; border-radius: 8px; position: relative; cursor: pointer; overflow-wrap: anywhere; word-break: break-word; }
+    .mine { background: #003333; text-align: right; }
+    .other { background: #222; text-align: left; }
+    .username { font-size: 12px; color: #aaa; }
+    .reply { font-size: 12px; color: #ff9800; margin-bottom: 3px; overflow-wrap: anywhere; word-break: break-word; }
+    .text { overflow-wrap: anywhere; word-break: break-word; }
+    .reactions { margin-top: 5px; display: flex; justify-content: flex-start; gap: 5px; flex-wrap: wrap; }
+    .reaction { background: #222; border-radius: 15px; padding: 2px 7px; font-size: 15px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
+    .reaction-count { color: #aaa; font-size: 13px; }
+    #sendBox { display: flex; padding: 10px; background: #111; }
+    #msgInput { margin-left:10px; color:aqua; background-color: #0b0f12; flex: 1; padding: 10px; border: 2px aqua solid; border-radius: 6px; }
+    #sendBtn { padding: 8px 15px; background: aqua; border: none; border-radius: 6px; margin-left: 5px; cursor: pointer; }
+    .actions { display: none; margin-top: 5px; }
+    .actions i { margin: 0 5px; cursor: pointer; }
+    .fa-edit { color: aqua; }
+    .fa-trash { color: red; }
+    .fa-reply { color: orange; }
+    .fa-smile { color: yellow; }
+    .typing { padding: 5px; font-size: 12px; color: #0f0; font-style: italic; }
+
+    .emoji-popup {
+      display: none;
+      position: fixed;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      background: #111;
+      border: 2px solid aqua;
+      border-radius: 8px;
+      padding: 10px;
+      z-index: 1000;
+    }
+
+    .emoji-popup span {
+      font-size: 20px;
+      margin: 5px;
+      cursor: pointer;
+    }
+
+    .overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 999;
+    }
+  </style>
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <link rel="stylesheet" href="styles/custom_alerts.css">
+</head>
+
+<body>
+
+  <a href="menu.html" id="backBtn"><i class="fas fa-arrow-left"></i> Back</a>
+
+  <div id="messages"></div>
+  <div id="typing"></div>
+
+  <div id="sendBox">
+    <input type="text" id="msgInput" placeholder="Type your message...">
+    <button id="sendBtn"><b>Send</b></button>
+  </div>
+
+  <div class="overlay" id="overlay"></div>
+  <div class="emoji-popup" id="emojiPopup"></div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDv25RohGhKcxDlt1DZaPb7BUg7LpWnJqo",
+      authDomain: "yes-coins-6a2d2.firebaseapp.com",
+      databaseURL: "https://yes-coins-6a2d2-default-rtdb.firebaseio.com",
+      projectId: "yes-coins-6a2d2",
+      storageBucket: "yes-coins-6a2d2.firebasestorage.app",
+      messagingSenderId: "868288595143",
+      appId: "1:868288595143:web:cc8e500e6c3c8cc4ab2ae2",
+      measurementId: "G-9XL5H32P79"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    const username = localStorage.getItem("username") || "Guest" + Math.floor(Math.random() * 1000);
+    const messagesRef = db.ref("public_chat");
+
+    let replyToMsg = null;
+
+    document.getElementById("sendBtn").addEventListener("click", () => {
+      const text = msgInput.value.trim();
+
+      if (text) {
+        const msgRef = messagesRef.push();
+
+        msgRef.set({
+          id: msgRef.key,
+          user: username,
+          text: text,
+          replyTo: replyToMsg || null,
+          reactions: {},
+          time: Date.now()
+        });
+
+        msgInput.value = "";
+        replyToMsg = null;
+        msgInput.placeholder = "Type your message...";
+      }
+    });
+
+    messagesRef.on("child_added", snap => showMessage(snap.val()));
+    messagesRef.on("child_changed", snap => updateMessage(snap.val()));
+
+    messagesRef.on("child_removed", snap => {
+      const div = document.getElementById("msg-" + snap.key);
+      if (div) div.remove();
+    });
+
+    function showMessage(msg) {
+      const div = document.createElement("div");
+
+      div.className = "msg " + (msg.user === username ? "mine" : "other");
+      div.id = "msg-" + msg.id;
+
+      div.innerHTML = `
+        <div class="username">${msg.user}</div>
+        ${msg.replyTo ? `<div class="reply">↪ Replying to: ${msg.replyTo}</div>` : ""}
+        <div class="text">${msg.text}</div>
+        <div class="reactions"></div>
+
+        <div class="actions">
+          <i class="fas fa-reply" onclick="setReply('${escapeText(msg.text)}')"></i>
+          <i class="fas fa-smile" onclick="openEmojiPopup('${msg.id}')"></i>
+
+          ${msg.user === username ? `
+            <i class="fas fa-edit" onclick="editMessage('${msg.id}', '${escapeText(msg.text)}')"></i>
+            <i class="fas fa-trash" onclick="deleteMessage('${msg.id}')"></i>
+          ` : ""}
+        </div>
+      `;
+
+      div.addEventListener("click", (e) => {
+        if (e.target.tagName.toLowerCase() !== "i") {
+          const actionsDiv = div.querySelector(".actions");
+          actionsDiv.style.display =
+            actionsDiv.style.display === "block" ? "none" : "block";
+        }
+      });
+
+      document.getElementById("messages").appendChild(div);
+
+      renderReactions(msg.id, msg.reactions || {});
+
+      document.getElementById("messages").scrollTop =
+        document.getElementById("messages").scrollHeight;
+    }
+
+    function updateMessage(msg) {
+      const div = document.getElementById("msg-" + msg.id);
+
+      if (!div) return;
+
+      div.querySelector(".text").innerText = msg.text;
+
+      renderReactions(msg.id, msg.reactions || {});
+    }
+
+    function renderReactions(id, reactions) {
+      const div = document.getElementById("msg-" + id);
+
+      if (!div) return;
+
+      const reactionsDiv = div.querySelector(".reactions");
+      reactionsDiv.innerHTML = "";
+
+      const counts = {};
+
+      for (let user in reactions) {
+        const emoji = reactions[user];
+
+        if (!counts[emoji]) {
+          counts[emoji] = [];
+        }
+
+        counts[emoji].push(user);
+      }
+
+      for (let emoji in counts) {
+        const reaction = document.createElement("span");
+        reaction.className = "reaction";
+
+        const emojiSpan = document.createElement("span");
+        emojiSpan.textContent = emoji;
+
+        const countSpan = document.createElement("span");
+        countSpan.className = "reaction-count";
+        countSpan.textContent = counts[emoji].length;
+
+        reaction.appendChild(emojiSpan);
+        reaction.appendChild(countSpan);
+
+        reaction.onclick = (e) => {
+          e.stopPropagation();
+
+          const users = counts[emoji];
+
+          if (users.includes(username)) {
+            db.ref("public_chat/" + id + "/reactions/" + username).remove();
+          } else {
+            db.ref("public_chat/" + id + "/reactions/" + username).set(emoji);
+          }
+        };
+
+        reactionsDiv.appendChild(reaction);
+      }
+    }
+
+    function setReply(text) {
+      replyToMsg = text;
+      msgInput.placeholder = "Replying to: " + text;
+    }
+
+    const emojiList = ["👍","❤️","😂","😮","😢","🔥","👏","🎉","😍","😡"];
+
+    function openEmojiPopup(id) {
+      const popup = document.getElementById("emojiPopup");
+
+      popup.innerHTML = "";
+
+      emojiList.forEach(e => {
+        const span = document.createElement("span");
+
+        span.textContent = e;
+
+        span.onclick = () => {
+          db.ref("public_chat/" + id + "/reactions/" + username).set(e);
+          closePopup();
+        };
+
+        popup.appendChild(span);
+      });
+
+      document.getElementById("overlay").style.display = "block";
+      popup.style.display = "block";
+    }
+
+    function closePopup() {
+      document.getElementById("overlay").style.display = "none";
+      document.getElementById("emojiPopup").style.display = "none";
+    }
+
+    document.getElementById("overlay").addEventListener("click", closePopup);
+
+    function editMessage(id, oldText) {
+      const newText = prompt("Edit your message:", oldText);
+
+      if (newText && newText.trim()) {
+        db.ref("public_chat/" + id).update({
+          text: newText
+        });
+      }
+    }
+
+    function deleteMessage(id) {
+      if (confirm("Delete this message?")) {
+        db.ref("public_chat/" + id).remove();
+      }
+    }
+
+    function escapeText(text) {
+      return text
+        .replace(/\\/g, "\\\\")
+        .replace(/'/g, "\\'")
+        .replace(/"/g, "&quot;")
+        .replace(/\n/g, "\\n");
+    }
+  </script>
+
+  <script type="module" src="scripts/notifications.js"></script>
+  <script src="scripts/custom_alerts.js"></script>
+
+</body>
+</html>

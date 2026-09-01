@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en" translate="no">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Home - My App</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    body{
+      margin:0;
+      font-family:Arial,sans-serif;
+      background:#121212;
+      color:#fff;
+    }
+    .coins,.gems{
+      display:flex;
+      border:.5px solid aqua;
+      border-radius:20px;
+      text-align:center;
+      background:#1a1a1a;
+      padding:8px 18px;
+      position:fixed;
+      top:15px;
+      gap:6px;
+      z-index:1000;
+    }
+    .coins{left:10px}
+    .gems{left:130px}
+    #menu-img{
+      display:flex;
+      border:.5px solid aqua;
+      border-radius:25px;
+      background:#1a1a1a;
+      width:50px;
+      height:50px;
+      position:fixed;
+      top:10px;
+      right:10px;
+      z-index:1000;
+    }
+  #profile-img{
+      display:flex;
+      border:.5px solid aqua;
+      border-radius:25px;
+      background:#1a1a1a;
+      width:50px;
+      height:50px;
+      position:fixed;
+      top:10px;
+      right:70px;
+      z-index:1000;
+    }
+    .cards{
+      display:flex;
+      flex-wrap:wrap;
+      justify-content:center;
+      gap:15px;
+      margin-top:90px;
+      padding:2px;
+    }
+    .card{
+      outline:none;
+      display:block;
+      text-decoration:none;
+      color:#fff;
+      width:80px;
+      height:120px;
+      padding:20px 10px;
+      border-radius:15px;
+      background:#1a1a1a;
+      text-align:center;
+      transition:.25s;
+    }
+    .card:hover{
+      transform:translateY(-5px) scale(1.03);
+    }
+    .card img{
+      width:60px;
+      height:60px;
+      object-fit:contain;
+      border-radius:8px;
+    }
+    .gold{
+      border:2px solid gold;
+      box-shadow:0 0 8px rgba(255,215,0,.5),0 0 20px rgba(255,215,0,.2);
+    }
+    .gold img{border:.5px solid gold}
+    .aqua{
+      border:2px solid aqua;
+      box-shadow:0 0 8px rgba(0,255,255,.5),0 0 20px rgba(0,255,255,.2);
+    }
+    .aqua img{border:.5px solid aqua}
+    .red{
+      border:2px solid red;
+      box-shadow:0 0 8px rgba(255,0,0,.5),0 0 20px rgba(255,0,0,.5);
+    }
+    .red img{border:.5px solid red}
+    h3{
+      text-align:center;
+      margin:12px 0 0;
+    }
+    .footer{
+      color:aqua;
+      font-size:16px;
+      text-align:center;
+      margin-top:20px;
+    }
+  #hrfdiv{
+  outline:none;
+  display:flex;
+  align-items:center;
+  text-decoration:none;
+  color:#fff;
+  width:320px;
+  height:80px;
+  padding:5px;
+  margin-top:20px;
+  margin-left:10px;
+  border-radius:15px;
+  background:#222;
+}
+
+#games-img{
+  border:1px aqua solid;
+  width:75px;
+  height:75px;
+  border-radius:15px;
+  object-fit:cover;
+}
+
+#hrftext{
+  margin-left:15px;
+  font-size:20px;
+}
+  </style>
+  <link rel="stylesheet" href="styles/custom_alerts.css">
+</head>
+<body>
+
+  <div class="coins"><b id="coins">0000</b><i style="color:gold" class="fas fa-coins"></i></div>
+  <div class="gems"><b id="gems">0000</b><i style="color:aqua" class="fas fa-gem"></i></div>
+
+  <a href="my_profile.html">
+    <img id="profile-img" src="icon1.jpg" alt="profile">
+  </a>
+  <a href="menu.html">
+    <img id="menu-img" src="images/menu.png" alt="menu">
+  </a>
+
+  <div class="cards">
+
+    <a href="mine.html" class="card gold">
+      <img src="images/mine.png" alt="Earn Gold">
+      <h3><b>Earn Gold</b></h3>
+    </a>
+
+    <a href="wheel.html" class="card red">
+      <img src="images/wheel.jpg" alt="Spin Wheel">
+      <h3><b>Spin Wheel</b></h3>
+    </a>
+
+    <a href="watch_tv.html" class="card aqua">
+      <img src="images/tv.jpg" alt="Watch TV">
+      <h3><b>Watch TV</b></h3>
+    </a>
+
+  </div>
+  <a id="hrfdiv" href="games.html">
+    <img id="games-img"src="images/games.jpg">
+    <b id="hrftext">Play & Earn</b>
+</a>
+  <a id="hrfdiv" href="share_and_win.html">
+    <img id="games-img"src="images/invite.jpg">
+    <b id="hrftext">Invite & Win</b>
+</a>
+  <a id="hrfdiv" href="store.html">
+    <img id="games-img"src="images/store.jpg">
+    <b id="hrftext">Store</b>
+</a>
+  <p class="footer">
+    <b>©2026 - Developed by Abdou Henni</b>
+  </p>
+
+  <script type="module">
+    import { database } from "./scripts/config.js";
+    import { ref, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+    const username=localStorage.getItem("username");
+    const coinsEl=document.getElementById("coins");
+    const gemsEl=document.getElementById("gems");
+    const profileImage=document.getElementById("profile-img");
+
+    async function loadUserData(){
+      if(!username)return;
+      const snapshot=await get(ref(database,"users/"+username));
+      if(snapshot.exists()){
+        const data=snapshot.val();
+        coinsEl.textContent=data.coins||0;
+        gemsEl.textContent=data.gems||0;
+        profileImage.src=data.icon||"icon1.jpg";
+      }
+    }
+
+    loadUserData();
+  </script>
+
+  <script type="module" src="scripts/notifications.js"></script>
+  <script src="scripts/custom_alerts.js"></script>
+</body>
+</html>

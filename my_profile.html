@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>profile</title>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      background: black;
+      color: white;
+      font-family: Arial, sans-serif;
+    }
+
+    #profile-img {
+      display: block;
+      width: 100px;
+      height: 100px;
+      margin: 30px auto 10px;
+      border: 1px aqua solid;
+      border-radius: 60%;
+      object-fit: cover;
+    }
+
+    h3 {
+      margin: 10px 0 30px;
+      color: aqua;
+      text-align: center;
+    }
+
+    strong {
+      color: aqua;
+    }
+
+    .profile-data {
+      width: min(100%, 320px);
+      margin: auto;
+      font-size: 18px;
+    }
+
+    .profile-data p {
+      padding: 12px 0;
+      border-bottom: 1px solid #164747;
+    }
+
+    .edit-button {
+      display: block;
+      margin: 10px auto 25px;
+      padding: 9px 14px;
+      border: 1px solid aqua;
+      border-radius: 5px;
+      background: transparent;
+      color: aqua;
+      cursor: pointer;
+      font-size: 15px;
+    }
+
+    .edit-button:hover {
+      background: aqua;
+      color: black;
+    }
+
+    #icons-box {
+      display: none;
+      width: 280px;
+      margin: 0 auto 20px;
+      padding: 12px;
+      border: 1px solid #164747;
+      text-align: center;
+    }
+
+    #icons-box button {
+      width: 70px;
+      height: 70px;
+      margin: 5px;
+      padding: 4px;
+      border: 1px solid aqua;
+      border-radius: 50%;
+      background: #071414;
+      cursor: pointer;
+    }
+
+    #icons-box img {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    #message {
+      color: aqua;
+      text-align: center;
+      font-size: 14px;
+    }
+
+    .error {
+      color: #ff7777 !important;
+    }
+  </style>
+</head>
+
+<body>
+  <img id="profile-img" src="icon1.jpg" alt="profile">
+
+  <button class="edit-button" id="edit-button" type="button" aria-label="تغيير أيقونة البروفايل">
+    <i class="fa-solid fa-pen"></i>
+  </button>
+
+  <div id="icons-box">
+    <button type="button" data-icon="icon1.jpg"><img src="icon1.jpg" alt="icon1"></button>
+    <button type="button" data-icon="icon2.jpg"><img src="icon2.jpg" alt="icon2"></button>
+    <button type="button" data-icon="icon3.jpg"><img src="icon3.jpg" alt="icon3"></button>
+  </div>
+
+  <h3 id="username">user</h3>
+
+  <div class="profile-data">
+    <p><strong>coins:</strong> <span id="coins">0</span></p>
+    <p><strong>gems:</strong> <span id="gems">0</span></p>
+  </div>
+
+  <p id="message"></p>
+  <button id="logoutBtn" class="btn" style="background:transparent;border:1px solid aqua;color:aqua;padding:12px 44px;border-radius:8px;margin-right:20px;"><b>Logout <i class="fas fa-sign-out-alt"></i></b></button>
+  <button id="homeBtn" class="btn" style="background:transparent;border:1px solid aqua;color:aqua;padding:12px 44px;border-radius:8px;"><b>Home <i class="fas fa-home"></i></b></button>
+  <button id="historyBtn" class="btn" style="background:transparent;border:1px solid aqua;color:aqua;margin-top: 14px;padding:12px 100px;border-radius:8px;"><b>Payment history <i class="fas fa-clock"></i></b></button>
+
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDv25RohGhKcxDlt1DZaPb7BUg7LpWnJqo",
+      authDomain: "yes-coins-6a2d2.firebaseapp.com",
+      databaseURL: "https://yes-coins-6a2d2-default-rtdb.firebaseio.com",
+      projectId: "yes-coins-6a2d2",
+      storageBucket: "yes-coins-6a2d2.firebasestorage.app",
+      messagingSenderId: "868288595143",
+      appId: "1:868288595143:web:cc8e500e6c3c8cc4ab2ae2",
+      measurementId: "G-9XL5H32P79"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+    const username = localStorage.getItem("username");
+
+    const usernameElement = document.getElementById("username");
+    const coinsElement = document.getElementById("coins");
+    const gemsElement = document.getElementById("gems");
+    const profileImage = document.getElementById("profile-img");
+    const iconsBox = document.getElementById("icons-box");
+    const message = document.getElementById("message");
+
+    let currentIcon = "icon1.jpg";
+
+    if (!username) {
+      usernameElement.textContent = "username غير موجود";
+      message.textContent = "لم يتم العثور على username في localStorage";
+      message.className = "error";
+    } else {
+      usernameElement.textContent = username;
+
+      const userReference = database.ref("users/" + username);
+
+      userReference.on("value", function(snapshot) {
+        const user = snapshot.val() || {};
+        coinsElement.textContent = user.coins ?? 0;
+        gemsElement.textContent = user.gems ?? 0;
+        currentIcon = user.icon || "icon1.jpg";
+        profileImage.src = currentIcon;
+      }, function() {
+        message.textContent = "تعذر الاتصال بقاعدة البيانات";
+        message.className = "error";
+      });
+    }
+
+    profileImage.onerror = function() {
+      profileImage.src = "icon1.jpg";
+    };
+
+    document.getElementById("edit-button").addEventListener("click", function() {
+      iconsBox.style.display = iconsBox.style.display === "block" ? "none" : "block";
+    });
+
+    document.querySelectorAll("#icons-box button").forEach(function(button) {
+      button.addEventListener("click", function() {
+        if (!username) return;
+
+        const selectedIcon = button.dataset.icon;
+        database.ref("users/" + username + "/icon").set(selectedIcon)
+          .then(function() {
+            currentIcon = selectedIcon;
+            profileImage.src = selectedIcon;
+            iconsBox.style.display = "none";
+            
+            message.className = "";
+          })
+          .catch(function() {
+            
+            message.className = "error";
+          });
+      });
+    });
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      localStorage.removeItem('username');
+      location.href = 'index.html';
+    });
+    document.getElementById('homeBtn').addEventListener('click', () => {
+      location.href = 'home.html';
+    });
+    document.getElementById('historyBtn').addEventListener('click', () => {
+      location.href = 'history_payments.html';
+    });
+  </script>
+</body>
+</html>

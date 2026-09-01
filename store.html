@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en" translate="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Store</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+<style>
+*{box-sizing:border-box}
+
+body{
+margin:0;
+background:#050505;
+color:#fff;
+font-family:Arial,sans-serif;
+min-height:100vh;
+padding-bottom:30px
+}
+
+.top{
+height:70px;
+display:flex;
+align-items:center;
+padding:0 18px
+}
+
+.back{
+width:44px;
+height:44px;
+border:1px solid aqua;
+border-radius:13px;
+background:#111;
+color:aqua;
+font-size:18px;
+box-shadow:0 0 12px #00ffff44;
+cursor:pointer
+}
+
+.balance{
+margin-left:auto;
+background:#111;
+border:1px solid #00ffff55;
+border-radius:13px;
+padding:10px 14px;
+font-size:14px;
+box-shadow:0 0 12px #00ffff22
+}
+
+.balance i{
+color:#00ffff;
+margin-right:5px
+}
+
+.header{
+text-align:center;
+margin-top:10px
+}
+
+.header h1{
+margin:0;
+color:aqua;
+font-size:27px;
+text-shadow:0 0 13px #00ffff88
+}
+
+.header p{
+margin:8px 0 0;
+color:#888;
+font-size:14px
+}
+
+.store{
+width:92%;
+max-width:430px;
+margin:28px auto 0;
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:15px
+}
+
+.card{
+background:#101010;
+border:1px solid #00ffff55;
+border-radius:19px;
+padding:15px 12px;
+text-align:center;
+box-shadow:0 0 15px #00ffff18;
+transition:.2s
+}
+
+.card:active{
+transform:scale(.97)
+}
+
+.bank{
+width:75px;
+height:75px;
+margin:auto;
+border-radius:16px;
+background:#080808;
+border:1px solid #00ffff66;
+display:flex;
+align-items:center;
+justify-content:center;
+overflow:hidden;
+box-shadow:0 0 15px #00ffff22
+}
+
+.bank img{
+width:100%;
+height:100%;
+object-fit:contain
+}
+
+.card h3{
+margin:13px 0 5px;
+font-size:25px;
+color:aqua;
+text-shadow:0 0 8px #00ffff55
+}
+
+.card .dzd{
+color:#fff;
+font-size:15px;
+font-weight:bold;
+margin-bottom:8px
+}
+
+.points{
+color:#999;
+font-size:13px;
+margin-bottom:14px
+}
+
+.points i{
+color:#00ffff;
+margin-right:4px
+}
+
+.withdraw{
+width:100%;
+height:39px;
+border:0;
+border-radius:12px;
+background:#00ffff;
+color:#000;
+font-weight:bold;
+cursor:pointer;
+font-size:13px;
+box-shadow:0 0 12px #00ffff55
+}
+
+.withdraw:disabled{
+opacity:.4;
+cursor:not-allowed;
+box-shadow:none
+}
+
+.note{
+width:92%;
+max-width:430px;
+margin:22px auto 0;
+background:#0d0d0d;
+border:1px solid #ffffff12;
+border-radius:14px;
+padding:13px;
+text-align:center;
+color:#777;
+font-size:12px;
+line-height:1.6
+}
+
+#message{
+position:fixed;
+left:50%;
+bottom:25px;
+transform:translateX(-50%) translateY(100px);
+background:#111;
+border:1px solid aqua;
+color:#fff;
+padding:13px 20px;
+border-radius:14px;
+font-size:14px;
+opacity:0;
+transition:.3s;
+z-index:20;
+white-space:nowrap;
+box-shadow:0 0 15px #00ffff55
+}
+
+#message.show{
+transform:translateX(-50%) translateY(0);
+opacity:1
+}
+
+.confirm{
+position:fixed;
+inset:0;
+background:#000b;
+display:none;
+align-items:center;
+justify-content:center;
+z-index:15
+}
+
+.confirm-box{
+width:290px;
+background:#0d0d0d;
+border:1px solid aqua;
+border-radius:20px;
+padding:25px;
+text-align:center;
+box-shadow:0 0 30px #00ffff55
+}
+
+.confirm-box i{
+font-size:40px;
+color:aqua;
+margin-bottom:12px
+}
+
+.confirm-box h2{
+margin:5px 0 10px;
+color:aqua
+}
+
+.confirm-box p{
+color:#aaa;
+font-size:14px;
+line-height:1.6
+}
+
+.rip-input{
+width:100%;
+margin-top:16px;
+padding:12px 14px;
+border-radius:12px;
+background:#080808;
+border:1px solid #00ffff55;
+color:#fff;
+font-size:14px;
+text-align:center;
+outline:none;
+box-shadow:0 0 10px #00ffff22
+}
+
+.rip-input:focus{
+border-color:aqua;
+box-shadow:0 0 14px #00ffff55
+}
+
+.rip-label{
+display:block;
+margin-top:16px;
+font-size:12px;
+color:#666;
+text-align:left
+}
+
+.rip-error{
+color:#ff5577;
+font-size:12px;
+min-height:16px;
+margin-top:6px;
+text-align:left
+}
+
+.actions{
+display:flex;
+gap:10px;
+margin-top:18px
+}
+
+.actions button{
+flex:1;
+height:42px;
+border-radius:12px;
+font-weight:bold;
+cursor:pointer
+}
+
+.cancel{
+background:#222;
+border:1px solid #444;
+color:#aaa
+}
+
+.confirm-btn{
+background:aqua;
+border:0;
+color:#000
+}
+
+.confirm-btn:disabled{
+opacity:.5;
+cursor:not-allowed
+}
+</style>
+</head>
+
+<body>
+
+<div class="top">
+
+<button class="back" onclick="location.href='home.html'">
+<i class="fa-solid fa-arrow-left"></i>
+</button>
+
+<div class="balance">
+<i class="fa-solid fa-coins"></i>
+<span id="coins">0</span>
+</div>
+
+</div>
+
+<div class="header">
+<h1>Store</h1>
+<p>Exchange your coins for Algerian Dinars</p>
+</div>
+
+<div class="store" id="store"></div>
+
+<div class="note">
+<i class="fa-solid fa-circle-info"></i>
+Your withdrawal request will be processed after verification.
+</div>
+
+<div id="message"></div>
+
+<div class="confirm" id="confirm">
+<div class="confirm-box">
+
+<i class="fa-solid fa-money-bill-transfer"></i>
+
+<h2>Withdraw</h2>
+
+<p id="confirmText"></p>
+
+<span class="rip-label">Your BaridiMob RIP</span>
+<input
+class="rip-input"
+id="ripInput"
+type="text"
+inputmode="numeric"
+maxlength="20"
+placeholder="00799999002012345678">
+<div class="rip-error" id="ripError"></div>
+
+<div class="actions">
+<button class="cancel" onclick="closeConfirm()">Cancel</button>
+<button class="confirm-btn" id="confirmBtn" onclick="confirmWithdraw()">Confirm</button>
+</div>
+
+</div>
+</div>
+
+
+<script type="module">
+
+import{database}from"./scripts/config.js";
+
+import{
+ref,
+onValue,
+get,
+set,
+update
+}from"https://www.gstatic.com/firebasejs/12.0.0/firebase-database.js";
+
+
+/* =========================
+الأسعار
+=========================
+
+غيّر هذه القيم فقط عندما تحدد
+أسعار السحب النهائية.
+*/
+
+const packages=[
+
+{
+points:1000,
+dzd:100
+},
+
+{
+points:2500,
+dzd:250
+},
+
+{
+points:5000,
+dzd:500
+},
+
+{
+points:10000,
+dzd:1000
+}
+
+];
+
+
+/* =========================
+المستخدم الحالي
+========================= */
+
+const username=
+localStorage.getItem("username");
+
+if(!username){
+location.href="index.html";
+}
+
+const userRef=
+ref(database,"users/"+username);
+
+
+/* =========================
+رصيد المستخدم
+========================= */
+
+let userCoins=0;
+
+let currentUserData=null;
+
+onValue(userRef,snapshot=>{
+
+const data=snapshot.val();
+
+if(!data)return;
+
+currentUserData=data;
+
+userCoins=
+Number(data.coins)||0;
+
+document.getElementById("coins")
+.textContent=userCoins.toLocaleString();
+
+renderStore();
+
+});
+
+
+/* =========================
+إنشاء البطاقات
+========================= */
+
+function renderStore(){
+
+const store=
+document.getElementById("store");
+
+store.innerHTML="";
+
+packages.forEach((item,index)=>{
+
+const enough=
+userCoins>=item.points;
+
+const card=
+document.createElement("div");
+
+card.className="card";
+
+card.innerHTML=`
+
+<div class="bank">
+<img src="images/baridi.jpg" alt="BaridiMob">
+</div>
+
+<h3>${item.dzd} DA</h3>
+
+<div class="dzd">
+Algerian Dinar
+</div>
+
+<div class="points">
+<i class="fa-solid fa-coins"></i>
+${item.points.toLocaleString()} Coins
+</div>
+
+<button
+class="withdraw"
+data-index="${index}"
+${enough?"":"disabled"}>
+<i class="fa-solid fa-arrow-right"></i>
+Withdraw
+</button>
+
+`;
+
+store.appendChild(card);
+
+});
+
+document
+.querySelectorAll(".withdraw")
+.forEach(button=>{
+
+button.addEventListener("click",()=>{
+
+const index=
+Number(button.dataset.index);
+
+openConfirm(index);
+
+});
+
+});
+
+}
+
+
+/* =========================
+اختيار الباقة
+========================= */
+
+let selectedPackage=null;
+
+function openConfirm(index){
+
+selectedPackage=
+packages[index];
+
+document.getElementById("confirmText")
+.innerHTML=
+"You are requesting <strong style='color:#00ffff'>"+
+selectedPackage.dzd+
+" DA</strong> in exchange for <strong style='color:#00ffff'>"+
+selectedPackage.points.toLocaleString()+
+" Coins</strong>.";
+
+document.getElementById("ripInput").value="";
+document.getElementById("ripError").textContent="";
+document.getElementById("confirmBtn").disabled=false;
+
+document.getElementById("confirm")
+.style.display="flex";
+
+}
+
+
+window.closeConfirm=function(){
+
+document.getElementById("confirm")
+.style.display="none";
+
+};
+
+
+/* =========================
+تنسيق الوقت
+========================= */
+
+function formatTime(date){
+
+const pad=n=>String(n).padStart(2,"0");
+
+const time=
+pad(date.getHours())+":"+
+pad(date.getMinutes())+":"+
+pad(date.getSeconds());
+
+const day=
+pad(date.getDate())+"/"+
+pad(date.getMonth()+1)+"/"+
+date.getFullYear();
+
+return time+" - "+day;
+
+}
+
+
+/* =========================
+التحقق من الـRIP
+========================= */
+
+function validateRip(rip){
+
+if(!rip)return"Please enter your RIP.";
+
+if(!/^\d+$/.test(rip))return"RIP must contain digits only.";
+
+if(rip.length<16||rip.length>20)return"RIP length looks incorrect.";
+
+return null;
+
+}
+
+
+/* =========================
+توليد كود طلب فريد
+========================= */
+
+function generateCode(){
+
+const chars=
+"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+let code="";
+
+for(let i=0;i<10;i++){
+code+=chars[Math.floor(Math.random()*chars.length)];
+}
+
+return code;
+
+}
+
+async function createUniqueRequestCode(username){
+
+for(let i=0;i<50;i++){
+
+const code=generateCode();
+
+const codeRef=
+ref(database,"requests/"+username+"/"+code);
+
+const snapshot=
+await get(codeRef);
+
+if(!snapshot.exists()){
+return code;
+}
+
+}
+
+throw new Error("Could not create a unique request code.");
+
+}
+
+
+/* =========================
+مكافأة صاحب الدعوة عند أول عملية شراء
+=========================
+
+تُنفَّذ فقط إذا كان المستخدم الحالي
+مدعوًا (referredBy) ولم يسبق صرف
+مكافأته (referralRewardGiven=false).
+
+لا تؤثر على منطق أو تصميم بقية الصفحة،
+وأي خطأ فيها لا يوقف عملية السحب نفسها.
+*/
+
+async function rewardReferrerOnFirstPurchase(){
+
+if(!currentUserData)return;
+
+if(!currentUserData.referredBy)return;
+
+if(currentUserData.referralRewardGiven)return;
+
+const referrerUsername=
+currentUserData.referredBy;
+
+const referrerRef=
+ref(database,"users/"+referrerUsername);
+
+const referrerSnapshot=
+await get(referrerRef);
+
+if(referrerSnapshot.exists()){
+
+const referrerData=
+referrerSnapshot.val();
+
+if(!referrerData.referrals){
+
+referrerData.referrals={};
+
+}
+
+const existingEntry=
+referrerData.referrals[username]||{};
+
+const rewardAmount=
+Number(existingEntry.reward)||100;
+
+referrerData.coins=
+(Number(referrerData.coins)||0)+rewardAmount;
+
+referrerData.referrals[username]={
+...existingEntry,
+reward:rewardAmount,
+status:"completed"
+};
+
+await set(referrerRef,referrerData);
+
+}
+
+await update(userRef,{
+referralRewardGiven:true
+});
+
+currentUserData.referralRewardGiven=true;
+
+}
+
+
+/* =========================
+تأكيد السحب
+========================= */
+
+window.confirmWithdraw=async function(){
+
+if(!selectedPackage)return;
+
+const ripInput=document.getElementById("ripInput");
+const ripError=document.getElementById("ripError");
+const confirmBtn=document.getElementById("confirmBtn");
+
+const rip=ripInput.value.trim();
+
+const error=validateRip(rip);
+
+if(error){
+ripError.textContent=error;
+return;
+}
+
+if(userCoins<selectedPackage.points){
+
+closeConfirm();
+
+showMessage("Not enough Coins!");
+
+return;
+
+}
+
+confirmBtn.disabled=true;
+
+try{
+
+const requestCode=
+await createUniqueRequestCode(username);
+
+const requestRef=
+ref(database,"requests/"+username+"/"+requestCode);
+
+await set(requestRef,{
+amount:selectedPackage.dzd,
+rip:rip,
+time:formatTime(new Date()),
+status:"pending"
+});
+
+await update(userRef,{
+coins:userCoins-selectedPackage.points
+});
+
+try{
+
+await rewardReferrerOnFirstPurchase();
+
+}catch(referralError){
+
+console.error(referralError);
+
+}
+
+confirmBtn.disabled=false;
+
+closeConfirm();
+
+showMessage("Withdrawal request sent!");
+
+}catch(error){
+
+console.error(error);
+
+confirmBtn.disabled=false;
+
+showMessage("Something went wrong, try again.");
+
+}
+
+};
+
+
+/* =========================
+رسالة
+========================= */
+
+function showMessage(text){
+
+const box=
+document.getElementById("message");
+
+box.textContent=text;
+
+box.classList.add("show");
+
+setTimeout(()=>{
+box.classList.remove("show");
+},2500);
+
+}
+
+</script>
+
+</body>
+</html>

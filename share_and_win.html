@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en" translate="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Share & Win</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<style>
+*{box-sizing:border-box}
+body{
+margin:0;
+background:#050505;
+color:#fff;
+font-family:Arial,sans-serif;
+min-height:100vh;
+display:flex;
+flex-direction:column;
+align-items:center
+}
+.top{
+width:100%;
+height:65px;
+display:flex;
+align-items:center;
+padding:0 18px
+}
+.back{
+border:1px solid #00ffff;
+background:#111;
+color:#00ffff;
+width:44px;
+height:44px;
+border-radius:13px;
+font-size:19px;
+box-shadow:0 0 10px #00ffff55;
+cursor:pointer
+}
+.title{
+margin-top:25px;
+font-size:26px;
+font-weight:bold;
+color:#00ffff;
+text-shadow:0 0 12px #00ffff88
+}
+.icon{
+margin-top:25px;
+width:85px;
+height:85px;
+border-radius:50%;
+background:#111;
+border:2px solid #00ffff;
+display:flex;
+align-items:center;
+justify-content:center;
+color:#00ffff;
+font-size:38px;
+box-shadow:0 0 25px #00ffff55
+}
+.text{
+width:88%;
+max-width:390px;
+text-align:center;
+margin-top:22px;
+line-height:1.6;
+color:#aaa;
+font-size:15px
+}
+.reward{
+color:#00ffff;
+font-weight:bold
+}
+.code-box{
+width:88%;
+max-width:390px;
+margin-top:25px;
+background:#101010;
+border:1px solid #00ffff66;
+border-radius:18px;
+padding:20px;
+text-align:center;
+box-shadow:0 0 20px #00ffff22
+}
+.code-label{
+font-size:13px;
+color:#888;
+margin-bottom:10px
+}
+.code{
+font-size:30px;
+font-weight:bold;
+letter-spacing:4px;
+color:#00ffff;
+text-shadow:0 0 12px #00ffff66;
+min-height:36px
+}
+.copy{
+margin-top:18px;
+width:100%;
+height:48px;
+border:0;
+border-radius:13px;
+background:#00ffff;
+color:#000;
+font-size:16px;
+font-weight:bold;
+cursor:pointer;
+box-shadow:0 0 15px #00ffff66
+}
+.copy:active,.share:active{
+transform:scale(.97)
+}
+.share{
+margin-top:12px;
+width:88%;
+max-width:390px;
+height:50px;
+border:1px solid #00ffff;
+border-radius:14px;
+background:#111;
+color:#00ffff;
+font-size:16px;
+font-weight:bold;
+cursor:pointer;
+box-shadow:0 0 12px #00ffff22
+}
+.info{
+width:88%;
+max-width:390px;
+margin-top:25px;
+padding:15px;
+border-radius:15px;
+background:#0d0d0d;
+border:1px solid #ffffff12;
+color:#777;
+font-size:13px;
+text-align:center;
+line-height:1.6
+}
+#message{
+position:fixed;
+left:50%;
+bottom:25px;
+transform:translateX(-50%) translateY(100px);
+background:#111;
+border:1px solid #00ffff;
+color:#fff;
+padding:13px 22px;
+border-radius:14px;
+font-size:14px;
+opacity:0;
+transition:.3s;
+z-index:20;
+white-space:nowrap;
+box-shadow:0 0 15px #00ffff55
+}
+#message.show{
+transform:translateX(-50%) translateY(0);
+opacity:1
+}
+</style>
+</head>
+
+<body>
+
+<div class="top">
+<button class="back" onclick="location.href='home.html'">
+<i class="fa-solid fa-arrow-left"></i>
+</button>
+</div>
+
+<div class="title">Share & Win</div>
+
+<div class="icon">
+<i class="fa-solid fa-gift"></i>
+</div>
+
+<div class="text">
+Share your unique code with your friends.<br>
+When someone joins using your code,
+you receive <span class="reward">100 Coins</span>!
+</div>
+
+<div class="code-box">
+<div class="code-label">YOUR INVITE CODE</div>
+<div class="code" id="code">Loading...</div>
+<button class="copy" onclick="copyCode()">
+<i class="fa-solid fa-copy"></i> Copy Code
+</button>
+</div>
+
+<button class="share" onclick="shareCode()">
+<i class="fa-solid fa-share-nodes"></i> Share
+</button>
+
+<div class="info">
+Invite your friends and earn <b style="color:#00ffff">100 Coins</b>
+for every successful invitation.
+</div>
+
+<div id="message"></div>
+
+<script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import{getDatabase,ref,get}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const firebaseConfig={
+apiKey:"AIzaSyDv25RohGhKcxDlt5hDZaPb7BUg7LpWnJqo",
+authDomain:"yes-coins-6a2d2.firebaseapp.com",
+databaseURL:"https://yes-coins-6a2d2-default-rtdb.firebaseio.com",
+projectId:"yes-coins-6a2d2",
+storageBucket:"yes-coins-6a2d2.firebasestorage.app",
+messagingSenderId:"868288595143",
+appId:"1:868288595143:web:cc8e500e6c3c8cc4ab2ae2",
+measurementId:"G-9XL5H32P79"
+};
+
+const app=initializeApp(firebaseConfig);
+const db=getDatabase(app);
+
+const username=localStorage.getItem("username");
+
+if(!username){
+location.href="home.html";
+}
+
+const codeElement=document.getElementById("code");
+const userRef=ref(db,"users/"+username);
+
+try{
+
+const snapshot=await get(userRef);
+const data=snapshot.val();
+
+if(data&&data.code){
+codeElement.textContent=data.code;
+}else{
+codeElement.textContent="No Code";
+showMessage("Invite code not found");
+}
+
+}catch(error){
+
+console.error(error);
+codeElement.textContent="Error";
+showMessage("Connection error");
+
+}
+
+function getCode(){
+return codeElement.textContent;
+}
+
+window.copyCode=async function(){
+
+const code=getCode();
+
+if(!code||code==="Loading..."||code==="No Code")return;
+
+try{
+
+await navigator.clipboard.writeText(code);
+showMessage("Code copied!");
+
+}catch(error){
+
+const input=document.createElement("input");
+input.value=code;
+document.body.appendChild(input);
+input.select();
+document.execCommand("copy");
+input.remove();
+
+showMessage("Code copied!");
+
+}
+
+};
+
+window.shareCode=async function(){
+
+const code=getCode();
+
+if(!code||code==="Loading..."||code==="No Code")return;
+
+const text=
+"Join Yes Coins and get rewards! 🎁\n"+
+"Use my invite code: "+code;
+
+if(navigator.share){
+
+try{
+
+await navigator.share({
+title:"Yes Coins",
+text:text
+});
+
+}catch(error){}
+
+}else{
+
+try{
+
+await navigator.clipboard.writeText(text);
+showMessage("Share text copied!");
+
+}catch(error){
+
+showMessage("Your invite code: "+code);
+
+}
+
+}
+
+};
+
+function showMessage(text){
+
+const box=document.getElementById("message");
+
+box.textContent=text;
+box.classList.add("show");
+
+setTimeout(()=>{
+box.classList.remove("show");
+},2500);
+
+}
+</script>
+
+</body>
+</html>

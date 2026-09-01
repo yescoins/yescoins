@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Mine</title>
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+
+<style>
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: #000;
+    color: white;
+    font-family: Arial, sans-serif;
+}
+
+
+/* =========================
+   TOP
+========================= */
+
+.top {
+    width: 100%;
+    height: 65px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 0 18px;
+}
+
+
+/* Back */
+
+.back {
+    color: white;
+    text-decoration: none;
+    font-size: 25px;
+}
+
+
+/* Right side */
+
+.top-right {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+
+
+/* Coins */
+
+.coin-box {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.coin-box i {
+    color: #ffd700;
+    font-size: 23px;
+}
+
+
+/* Question */
+
+.info-btn {
+    width: 30px;
+    height: 30px;
+
+    border: 1px solid #777;
+    border-radius: 50%;
+
+    background: #222;
+    color: white;
+
+    font-size: 17px;
+    font-weight: bold;
+
+    cursor: pointer;
+}
+
+
+/* =========================
+   MINE
+========================= */
+
+.mine {
+
+    min-height: calc(100vh - 65px);
+
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
+
+    margin-top: -35px;
+}
+
+
+/* Mine image */
+
+.mine-image {
+
+    width: 280px;
+    height: 280px;
+
+    object-fit: contain;
+
+    margin-bottom: 20px;
+}
+
+
+h1 {
+
+    margin: 0 0 20px 0;
+
+    font-size: 28px;
+}
+
+
+/* Reward */
+
+#result {
+
+    height: 25px;
+
+    margin-bottom: 15px;
+
+    font-size: 18px;
+
+    color: #ffd700;
+}
+
+
+/* Button */
+
+#mineBtn {
+
+    width: 230px;
+    height: 60px;
+
+    border: none;
+    border-radius: 15px;
+
+    background: aqua;
+    color: #111;
+
+    font-size: 20px;
+    font-weight: bold;
+
+    cursor: pointer;
+
+    transition: 0.2s;
+}
+
+
+#mineBtn:active {
+    transform: scale(0.97);
+}
+
+
+#mineBtn.disabled {
+
+    background: #666;
+    color: #ccc;
+
+    cursor: not-allowed;
+}
+
+
+/* =========================
+   POPUP
+========================= */
+
+.popup-bg {
+
+    display: none;
+
+    position: fixed;
+
+    top: 0;
+    left: 0;
+
+    width: 100%;
+    height: 100%;
+
+    background: rgba(0,0,0,0.75);
+
+    align-items: center;
+    justify-content: center;
+
+    z-index: 999;
+}
+
+
+.popup {
+
+    width: 85%;
+    max-width: 350px;
+
+    background: #1d1d1d;
+
+    border-radius: 18px;
+
+    padding: 25px;
+
+    box-shadow: 0 0 25px rgba(0,0,0,0.5);
+
+    position: relative;
+}
+
+
+.popup h2 {
+
+    margin-top: 0;
+
+    text-align: center;
+
+    font-size: 23px;
+}
+
+
+.reward {
+
+    display: flex;
+
+    justify-content: space-between;
+    align-items: center;
+
+    background: #282828;
+
+    padding: 13px 15px;
+
+    margin: 9px 0;
+
+    border-radius: 10px;
+
+    font-size: 17px;
+}
+
+
+.reward .amount {
+
+    color: #ffd700;
+
+    font-weight: bold;
+}
+
+
+.reward .chance {
+
+    color: #aaa;
+}
+
+
+/* Close */
+
+.close-popup {
+
+    position: absolute;
+
+    top: 10px;
+    right: 15px;
+
+    background: none;
+
+    border: none;
+
+    color: white;
+
+    font-size: 25px;
+
+    cursor: pointer;
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<!-- =========================
+     TOP
+========================= -->
+
+<div class="top">
+
+    <a href="home.html" class="back">
+        <i class="fa-solid fa-arrow-left"></i>
+    </a>
+
+
+    <div class="top-right">
+
+        <div class="coin-box">
+
+            <i class="fa-solid fa-coins"></i>
+
+            <span id="coins">0</span>
+
+        </div>
+
+
+        <button class="info-btn" onclick="openPopup()">
+            ?
+        </button>
+
+    </div>
+
+</div>
+
+
+
+<!-- =========================
+     MINE
+========================= -->
+
+<div class="mine">
+
+    <img src="images/mine.png" class="mine-image">
+
+    <div id="result"></div>
+
+
+    <button id="mineBtn" onclick="startMining()">
+        Start Mining
+    </button>
+
+</div>
+
+
+
+<!-- =========================
+     REWARDS POPUP
+========================= -->
+
+<div class="popup-bg" id="popupBg">
+
+    <div class="popup">
+
+        <button class="close-popup" onclick="closePopup()">
+            ×
+        </button>
+
+        <h2>Mining Rewards</h2>
+
+
+        <div class="reward">
+
+            <span class="amount">
+                1 Coin
+            </span>
+
+            <span class="chance">
+                30%
+            </span>
+
+        </div>
+
+
+        <div class="reward">
+
+            <span class="amount">
+                2 Coins
+            </span>
+
+            <span class="chance">
+                40%
+            </span>
+
+        </div>
+
+
+        <div class="reward">
+
+            <span class="amount">
+                3 Coins
+            </span>
+
+            <span class="chance">
+                20%
+            </span>
+
+        </div>
+
+
+        <div class="reward">
+
+            <span class="amount">
+                5 Coins
+            </span>
+
+            <span class="chance">
+                7.5%
+            </span>
+
+        </div>
+
+
+        <div class="reward">
+
+            <span class="amount">
+                10 Coins
+            </span>
+
+            <span class="chance">
+                2.5%
+            </span>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<script>
+
+
+// ===============================
+// Firebase
+// ===============================
+
+const firebaseConfig = {
+
+    apiKey: "AIzaSyDv25RohGhKcxDlt1DZaPb7BUg7LpWnJqo",
+
+    authDomain: "yes-coins-6a2d2.firebaseapp.com",
+
+    databaseURL: "https://yes-coins-6a2d2-default-rtdb.firebaseio.com",
+
+    projectId: "yes-coins-6a2d2",
+
+    storageBucket: "yes-coins-6a2d2.firebasestorage.app",
+
+    messagingSenderId: "868288595143",
+
+    appId: "1:868288595143:web:cc8e500e6c3c8cc4ab2ae2",
+
+    measurementId: "G-9XL5H32P79"
+
+};
+
+
+firebase.initializeApp(firebaseConfig);
+
+const database = firebase.database();
+
+
+// ===============================
+// Username
+// ===============================
+
+const username = localStorage.getItem("username");
+
+
+if (!username) {
+
+    alert("Please login first.");
+
+    window.location.href = "home.html";
+
+}
+
+
+// ===============================
+// Coins
+// ===============================
+
+const coinsRef = database.ref(
+    "users/" + username + "/coins"
+);
+
+
+coinsRef.on("value", function(snapshot) {
+
+    let coins = snapshot.val();
+
+    if (coins === null) {
+        coins = 0;
+    }
+
+    document.getElementById("coins").innerText = coins;
+
+});
+
+
+
+// ===============================
+// Mining data
+// ===============================
+
+const miningKey = "mineEndTime_" + username;
+
+let mining = false;
+
+let timer;
+
+
+
+// ===============================
+// Start Mining
+// ===============================
+
+function startMining() {
+
+    if (mining) {
+        return;
+    }
+
+
+    // وقت النهاية
+    const endTime = Date.now() + (30 * 1000);
+
+
+    // حفظ وقت النهاية
+    localStorage.setItem(
+        miningKey,
+        endTime
+    );
+
+
+    mining = true;
+
+
+    updateMining();
+
+}
+
+
+
+// ===============================
+// Update timer
+// ===============================
+
+function updateMining() {
+
+    const button =
+        document.getElementById("mineBtn");
+
+    const result =
+        document.getElementById("result");
+
+
+    clearInterval(timer);
+
+
+    timer = setInterval(function() {
+
+        const endTime =
+            Number(localStorage.getItem(miningKey));
+
+
+        if (!endTime) {
+
+            clearInterval(timer);
+
+            mining = false;
+
+            button.innerHTML = "Start Mining";
+
+            button.disabled = false;
+
+            button.classList.remove("disabled");
+
+            return;
+
+        }
+
+
+        const remaining =
+            endTime - Date.now();
+
+
+        // =========================
+        // انتهى التعدين
+        // =========================
+
+        if (remaining <= 0) {
+
+            clearInterval(timer);
+
+            localStorage.removeItem(miningKey);
+
+            mining = false;
+
+            giveReward();
+
+            return;
+
+        }
+
+
+        // الثواني المتبقية
+
+        const seconds =
+            Math.ceil(remaining / 1000);
+
+
+        button.innerHTML = seconds;
+
+        button.disabled = true;
+
+        button.classList.add("disabled");
+
+        result.innerHTML = "";
+
+    }, 250);
+
+
+    // تحديث مباشر
+    const endTime =
+        Number(localStorage.getItem(miningKey));
+
+
+    if (endTime) {
+
+        const remaining =
+            endTime - Date.now();
+
+
+        if (remaining > 0) {
+
+            button.innerHTML =
+                Math.ceil(remaining / 1000);
+
+            button.disabled = true;
+
+            button.classList.add("disabled");
+
+            mining = true;
+
+        }
+
+    }
+
+}
+
+
+
+// ===============================
+// Give Reward
+// ===============================
+
+function giveReward() {
+
+    const button =
+        document.getElementById("mineBtn");
+
+    const result =
+        document.getElementById("result");
+
+
+    const random =
+        Math.random() * 100;
+
+
+    let reward;
+
+
+    // 30%
+    if (random < 30) {
+
+        reward = 1;
+
+    }
+
+
+    // 40%
+    else if (random < 70) {
+
+        reward = 2;
+
+    }
+
+
+    // 20%
+    else if (random < 90) {
+
+        reward = 3;
+
+    }
+
+
+    // 7.5%
+    else if (random < 97.5) {
+
+        reward = 5;
+
+    }
+
+
+    // 2.5%
+    else {
+
+        reward = 10;
+
+    }
+
+
+
+    // =========================
+    // Add coins
+    // =========================
+
+    coinsRef.transaction(
+
+        function(currentCoins) {
+
+            if (currentCoins === null) {
+                currentCoins = 0;
+            }
+
+            return Number(currentCoins) + reward;
+
+        },
+
+        function(error, committed, snapshot) {
+
+            if (error) {
+
+                result.innerHTML =
+                    "Error!";
+
+                console.log(error);
+
+            }
+
+            else if (committed) {
+
+                result.innerHTML =
+                    "+" + reward + " Coins";
+
+            }
+
+        }
+
+    );
+
+
+    button.innerHTML =
+        "Start Mining";
+
+    button.disabled = false;
+
+    button.classList.remove("disabled");
+
+    mining = false;
+
+}
+
+
+
+// ===============================
+// Check mining when page opens
+// ===============================
+
+function checkMining() {
+
+    const endTime =
+        Number(localStorage.getItem(miningKey));
+
+
+    if (!endTime) {
+
+        mining = false;
+
+        return;
+
+    }
+
+
+    const remaining =
+        endTime - Date.now();
+
+
+    // إذا انتهى أثناء وجودنا خارج الصفحة
+    if (remaining <= 0) {
+
+        localStorage.removeItem(miningKey);
+
+        giveReward();
+
+        return;
+
+    }
+
+
+    // مازال مستمراً
+    mining = true;
+
+    updateMining();
+
+}
+
+
+// تشغيل الفحص عند فتح الصفحة
+checkMining();
+
+
+
+// ===============================
+// Popup
+// ===============================
+
+function openPopup() {
+
+    document.getElementById("popupBg").style.display =
+        "flex";
+
+}
+
+
+function closePopup() {
+
+    document.getElementById("popupBg").style.display =
+        "none";
+
+}
+
+
+// إغلاق عند الضغط خارج النافذة
+
+document.getElementById("popupBg").addEventListener(
+    "click",
+    function(event) {
+
+        if (event.target === this) {
+
+            closePopup();
+
+        }
+
+    }
+);
+
+</script>
+
+</body>
+</html>

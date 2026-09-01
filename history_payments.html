@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en" translate="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Notifications</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+<style>
+*{box-sizing:border-box}
+
+body{
+margin:0;
+background:#050505;
+color:#fff;
+font-family:Arial,sans-serif;
+min-height:100vh;
+padding-bottom:30px
+}
+
+.top{
+height:70px;
+display:flex;
+align-items:center;
+padding:0 18px
+}
+
+.back{
+width:44px;
+height:44px;
+border:1px solid aqua;
+border-radius:13px;
+background:#111;
+color:aqua;
+font-size:18px;
+box-shadow:0 0 12px #00ffff44;
+cursor:pointer
+}
+
+.header{
+text-align:center;
+margin-top:10px
+}
+
+.header h1{
+margin:0;
+color:aqua;
+font-size:27px;
+text-shadow:0 0 13px #00ffff88
+}
+
+.header p{
+margin:8px 0 0;
+color:#888;
+font-size:14px
+}
+
+.list{
+width:92%;
+max-width:480px;
+margin:28px auto 0;
+display:flex;
+flex-direction:column;
+gap:14px
+}
+
+.empty{
+text-align:center;
+color:#666;
+margin-top:60px;
+font-size:14px
+}
+
+.card{
+background:#101010;
+border:1px solid #00ffff55;
+border-radius:17px;
+padding:16px;
+display:flex;
+gap:14px;
+align-items:flex-start;
+box-shadow:0 0 15px #00ffff18
+}
+
+.icon{
+width:42px;
+height:42px;
+min-width:42px;
+border-radius:12px;
+background:#080808;
+border:1px solid #00ffff66;
+display:flex;
+align-items:center;
+justify-content:center;
+color:aqua;
+font-size:18px;
+box-shadow:0 0 12px #00ffff22
+}
+
+.content{
+flex:1
+}
+
+.text{
+color:#fff;
+font-size:14px;
+line-height:1.5
+}
+
+.date{
+color:#666;
+font-size:12px;
+margin-top:6px
+}
+</style>
+</head>
+
+<body>
+
+<div class="top">
+
+<button class="back" onclick="location.href='my_profile.html'">
+<i class="fa-solid fa-arrow-left"></i>
+</button>
+
+</div>
+
+<div class="header">
+<h1>Notifications</h1>
+<p>Your payment history</p>
+</div>
+
+<div class="list" id="list"></div>
+
+
+<script type="module">
+
+import{database}from"./scripts/config.js";
+
+import{
+ref,
+onValue
+}from"https://www.gstatic.com/firebasejs/12.0.0/firebase-database.js";
+
+
+/* =========================
+المستخدم الحالي
+========================= */
+
+const username=
+localStorage.getItem("username");
+
+if(!username){
+location.href="index.html";
+}
+
+const notificationsRef=
+ref(database,"users/"+username+"/notification");
+
+
+/* =========================
+الاستماع للإشعارات
+========================= */
+
+onValue(notificationsRef,snapshot=>{
+
+const data=
+snapshot.val();
+
+renderList(data);
+
+});
+
+
+/* =========================
+تنسيق التاريخ
+========================= */
+
+function formatDate(timestamp){
+
+const date=
+new Date(timestamp);
+
+const pad=n=>String(n).padStart(2,"0");
+
+const time=
+pad(date.getHours())+":"+
+pad(date.getMinutes());
+
+const day=
+pad(date.getDate())+"/"+
+pad(date.getMonth()+1)+"/"+
+date.getFullYear();
+
+return time+" - "+day;
+
+}
+
+
+/* =========================
+عرض القائمة
+========================= */
+
+function renderList(data){
+
+const list=
+document.getElementById("list");
+
+list.innerHTML="";
+
+const notifications=[];
+
+if(data){
+
+Object.keys(data).forEach(messageCode=>{
+
+const notification=
+data[messageCode];
+
+notifications.push({
+date:Number(notification.date)||0,
+text:notification.text||""
+});
+
+});
+
+}
+
+
+if(notifications.length===0){
+
+list.innerHTML=
+"<div class='empty'>No notifications yet.</div>";
+
+return;
+
+}
+
+
+/*
+الأحدث أولًا.
+*/
+
+notifications.sort((a,b)=>{
+
+return b.date-a.date;
+
+});
+
+
+notifications.forEach(notification=>{
+
+const card=
+document.createElement("div");
+
+card.className="card";
+
+card.innerHTML=`
+
+<div class="icon">
+<i class="fa-solid fa-money-bill-transfer"></i>
+</div>
+
+<div class="content">
+<div class="text">${notification.text}</div>
+<div class="date">${formatDate(notification.date)}</div>
+</div>
+
+`;
+
+list.appendChild(card);
+
+});
+
+}
+
+</script>
+
+</body>
+</html>
